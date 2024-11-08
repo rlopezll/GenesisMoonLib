@@ -26,7 +26,7 @@ void _Level_SetOffsetMap(VDPPlane layerId, const MathVector offset);
 MathVector _Level_GetOffsetMap(VDPPlane layerId);
 // ----
 
-int  Level_LoadMap(VDPPlane layerId, const MapDefinition* mapDef, const TileSet* tileSet, const Palette* palette, u16 paletteIdx, u16 baseTileIdx);
+int  Level_LoadMap(VDPPlane layerId, const MapDefinition* mapDef, const TileSet* tileSet, const Palette* palette, u16 paletteIdx, u16 baseTileIdx, u16 priority);
 void Level_SetLimitMap(VDPPlane layerId, const MathBox limit);
 bool Level_CanGoTo(VDPPlane layerId, Direction direction);
 

@@ -7,7 +7,7 @@ CharacterObject* GCharacters[MAX_CHARACTERS_REGISTRED];
 void Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const MathVector position, u16 tileIndex, u16 palette, u16 priority) {
     s16 x = fastFix32ToInt(position.x);
     s16 y = fastFix32ToInt(position.y);
-    character->sprite = SPR_addSprite(spriteDef, x, y, TILE_ATTR(palette,FALSE,FALSE,FALSE));
+    character->sprite = SPR_addSprite(spriteDef, x, y, TILE_ATTR(palette,priority,FALSE,FALSE));
     SPR_setVRAMTileIndex(character->sprite, tileIndex);
     PAL_setPalette(palette, spriteDef->palette->data, DMA);
     character->size.x = spriteDef->w;
@@ -122,6 +122,7 @@ void _Character_Update() {
             break;
 
         if(GCharacters[idx]->bIsVisible) {
+            KLog_U2("localPos x:", GCharacters[idx]->localPos.x, " y: ", GCharacters[idx]->localPos.y);
             SPR_setPosition(GCharacters[idx]->sprite, GCharacters[idx]->localPos.x, GCharacters[idx]->localPos.y);
         } 
     }

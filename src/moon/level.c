@@ -11,6 +11,7 @@ void _Level_Initialize(const MathVector resolution) {
 }
 
 void _Level_Update() {
+    // GLevel.layers[0].offset.x = GLevel.layers[1].offset.x / 2;
     for(u8 idx=0;idx<MAX_LEVEL_LAYERS;++idx) {
         if(GLevel.layers[idx].map) {
             // KLog_U2("Offset X: ", offset_x, " Y: ", offset_y);
@@ -37,16 +38,20 @@ MathVector _Level_GetOffsetMap(VDPPlane layerId) {
     return GLevel.layers[layerId].offset;
 }
 
-int Level_LoadMap(VDPPlane layerId, const MapDefinition* mapDef, const TileSet* tileSet, const Palette* palette, u16 paletteIdx, u16 baseTileIdx) {
+int Level_LoadMap(VDPPlane layerId, const MapDefinition* mapDef, const TileSet* tileSet, const Palette* palette, u16 paletteIdx, u16 baseTileIdx, u16 priority) {
     if(layerId >= MAX_LEVEL_LAYERS)
         return baseTileIdx;
 
-    VDP_loadTileSet(tileSet, baseTileIdx, DMA);
-    PAL_setPalette(paletteIdx, palette->data, DMA);
-    GLevel.layers[layerId].map = MAP_create(mapDef, layerId, TILE_ATTR_FULL(paletteIdx, FALSE, FALSE, FALSE, baseTileIdx));
+    if(tileSet) {
+        VDP_loadTileSet(tileSet, baseTileIdx, DMA);
+    }
+    if(palette) {
+        PAL_setPalette(paletteIdx, palette->data, DMA);
+    }
+    GLevel.layers[layerId].map = MAP_create(mapDef, layerId, TILE_ATTR_FULL(paletteIdx, priority, FALSE, FALSE, baseTileIdx));
     GLevel.layers[layerId].limit.vmin.x = GLevel.layers[layerId].limit.vmin.y = GLevel.layers[layerId].limit.vmax.x = GLevel.layers[layerId].limit.vmax.y = 0;
     GLevel.layers[layerId].offset.x = GLevel.layers[layerId].offset.y = 0;
-    return baseTileIdx + tileSet->numTile;
+    return tileSet->numTile;
 }
 
 void Level_SetLimitMap(VDPPlane layerId, const MathBox limit) {

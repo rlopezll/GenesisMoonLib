@@ -1,16 +1,21 @@
 const { parseXml } = require('@rgrove/parse-xml');
 const fs = require('fs');
+const path = require('node:path'); 
 
 let filename = '';
-let filename_out = '';
-if(process.argv.length > 3) {
+let filename_out_h = '';
+let filename_out_c = '';
+if(process.argv.length > 4) {
     filename = process.argv[2];
-    filename_out = process.argv[3];
+    filename_out_h = process.argv[3];
+    filename_out_c = process.argv[4];
 }
 else {
-    console.log(`node import_tmx.js <filename_tmx> <filename_output_obj>`);
+    console.log(`node import_tmx.js <filename_tmx> <filename_output_header> <filename_output_c>`);
     process.exit(1);
 }
+
+const only_filename_out_header = path.basename(filename_out_h);
 
 if (!fs.existsSync(filename)) {
     console.log(`Error: TMX file: ${filename} not exists.`);
@@ -65,6 +70,13 @@ headerFile += `\n} EObjectType;\n\n`;
 headerFile += `
 #define NUM_GTMX_OBJECTS ${tmx_objects_count}
 
+extern TMX_Object GTMX_Objects[NUM_GTMX_OBJECTS];
+
+#endif
+`;
+
+let codeFile = `#include "${only_filename_out_header}"
+
 TMX_Object GTMX_Objects[NUM_GTMX_OBJECTS] = {
 `;
 
@@ -98,16 +110,16 @@ function parserObj(obj) {
                 const y = parseInt(obj.attributes.y);
                 if(!bFirstObject)
                 {
-                    headerFile += `,`;
+                    codeFile += `,`;
                 }
                 if(obj.attributes.width && obj.attributes.height)
                 {
                     const width = parseInt(obj.attributes.width);
                     const height = parseInt(obj.attributes.height);
-                    headerFile += ` {${typeID}, ${uniqueID}, ${x}, ${y}, ${width}, ${height}}`;
+                    codeFile += ` {${typeID}, ${uniqueID}, {${x}, ${y}, ${width}, ${height}}}`;
                     // console.log(`Rectangle: ${uniqueID} typeID: ${typeID} X: ${obj.attributes.x} Y: ${obj.attributes.y} W: ${obj.attributes.width} H: ${obj.attributes.height}`);
                 } else {
-                    headerFile += ` {${typeID}, ${uniqueID}, ${x}, ${y}, 0, 0}`;
+                    codeFile += ` {${typeID}, ${uniqueID}, {${x}, ${y}, 0, 0}}`;
                     // console.log(`Rectangle: ${uniqueID} typeID: ${typeID} X: ${obj.attributes.x} Y: ${obj.attributes.y}`);
                 }
                 bFirstObject = false;
@@ -125,7 +137,8 @@ function parserObj(obj) {
 
 parserObj(jObj2);
 
-headerFile += `\n};\n#endif`;
+codeFile += `\n};\n`;
 // console.log(headerFile);
 
-fs.writeFileSync(filename_out, headerFile);
+fs.writeFileSync(filename_out_h, headerFile);
+fs.writeFileSync(filename_out_c, codeFile);
