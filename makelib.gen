@@ -1,0 +1,133 @@
+MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_DIR := $(subst \,/,$(MAKEFILE_DIR))
+
+ifneq ("$(wildcard $(MAKEFILE_DIR)bin/rescomp.jar)","")
+    GDK := $(patsubst %/,%,$(MAKEFILE_DIR))
+endif
+
+include $(GDK)/common.mk
+
+GDK_LIB = $(LIB)/libmoon.a
+SRC_LIB = src
+INCLUDE_LIB_MOON = inc
+LIB = lib
+
+SRC_LIB_C = $(wildcard $(SRC_LIB)/*.c)
+SRC_LIB_C += $(wildcard $(SRC_LIB)/*/*.c)
+SRC_LIB_C += $(wildcard $(SRC_LIB)/*/*/*.c)
+SRC_LIB_C := $(filter-out $(SRC_LIB)/boot/rom_head.c, $(SRC_LIB_C))
+SRC_LIB_S = $(wildcard $(SRC_LIB)/*.s)
+SRC_LIB_S += $(wildcard $(SRC_LIB)/*/*.s)
+SRC_LIB_S += $(wildcard $(SRC_LIB)/*/*/*.s)
+SRC_LIB_S := $(filter-out $(SRC_LIB)/boot/sega.s, $(SRC_LIB_S))
+SRC_LIB_S80 = $(wildcard $(SRC_LIB)/*.s80)
+SRC_LIB_S80 += $(wildcard $(SRC_LIB)/*/*.s80)
+SRC_LIB_S80 += $(wildcard $(SRC_LIB)/*/*/*.s80)
+
+OBJ_LIB = $(SRC_LIB_S80:.s80=.o)
+OBJ_LIB += $(SRC_LIB_S:.s=.o)
+OBJ_LIB += $(SRC_LIB_C:.c=.o)
+OBJS_LIB:= $(addprefix out/, $(OBJ_LIB))
+
+DEP_LIB := $(OBJS_LIB:.o=.d)
+
+-include $(DEP_LIB)
+
+LST_LIB := $(SRC_LIB_C:.c=.lst)
+LSTS_LIB:= $(addprefix out/, $(LST_LIB))
+
+INCS_LIB := -I$(INCLUDE_LIB) -I$(SRC_LIB) -I$(RES_LIB) -I$(INCLUDE_LIB_MOON)
+DEFAULT_FLAGS_LIB := $(EXTRA_FLAGS) -DSGDK_GCC -m68000 -Wall -Wextra -Wno-shift-negative-value -Wno-unused-parameter -fno-builtin -fms-extensions $(INCS_LIB) -B$(BIN)
+FLAGSZ80_LIB := -i$(SRC_LIB) -i$(INCLUDE_LIB) -i$(INCLUDE_LIB)/snd -I$(INCLUDE_LIB_MOON)
+
+#release: FLAGS_LIB= $(DEFAULT_FLAGS_LIB) -Os -fomit-frame-pointer -fuse-linker-plugin -flto
+release: FLAGS_LIB= $(DEFAULT_FLAGS_LIB) -O3 -fuse-linker-plugin -fno-web -fno-gcse -fno-unit-at-a-time -fomit-frame-pointer -ffat-lto-objects -flto
+release: CFLAGS_LIB= $(FLAGS_LIB)
+release: AFLAGS_LIB= $(FLAGS_LIB)
+release: $(LIB)/libmoon.a
+
+debug: FLAGS_LIB= $(DEFAULT_FLAGS_LIB) -O1 -DDEBUG=1
+debug: CFLAGS_LIB= $(FLAGS_LIB) -ggdb
+debug: AFLAGS_LIB= $(FLAGS_LIB)
+debug: $(LIB)/libmoon_debug.a
+
+asm: FLAGS_LIB= $(DEFAULT_FLAGS_LIB) -O3 -fuse-linker-plugin -fno-web -fno-gcse -fno-unit-at-a-time -fomit-frame-pointer -S
+asm: CFLAGS_LIB= $(FLAGS_LIB)
+asm: AFLAGS_LIB= $(FLAGS_LIB)
+asm: $(LSTS_LIB)
+
+all: release
+default: release
+
+Default: release
+Debug: debug
+Release: release
+Asm: asm
+
+.PHONY: clean
+
+cleanlst:
+	$(RM) -f $(LSTS_LIB)
+
+cleandep:
+	$(RM) -f $(DEP_LIB)
+
+cleanobj:
+	$(RM) -f $(OBJS_LIB)
+
+cleanrelease: cleanobj cleandep cleanlst
+	$(RM) -f $(LIB)/libmoon.a out.lst cmd_
+
+cleandebug: cleanobj cleandep cleanlst
+	$(RM) -f $(LIB)/libmoon_debug.a out.lst cmd_
+
+cleanasm: cleanlst
+
+clean: cleanobj cleandep cleanlst
+	$(RM) -f $(LIB)/libmoon.a $(LIB)/libmoon_debug.a out.lst cmd_
+
+cleanall: clean
+cleanAll: clean
+cleandefault: clean
+cleanDefault: clean
+
+cleanRelease: cleanrelease
+cleanDebug: cleandebug
+cleanAsm: cleanasm
+
+
+$(LIB)/libmoon.a: cmd_
+	$(AR) rs $(LIB)/libmoon.a $(LTO_PLUGIN)  @cmd_
+	$(RM) cmd_
+
+$(LIB)/libmoon_debug.a: cmd_
+	$(AR) rs $(LIB)/libmoon_debug.a $(LTO_PLUGIN) @cmd_
+	$(RM) cmd_
+
+cmd_ : $(OBJS_LIB)
+	$(ECHO) "$(OBJS_LIB)" > cmd_
+
+out/%.lst: %.c
+	$(MKDIR) -p $(dir $@)
+	$(CC) $(CFLAGS_LIB) -c $< -o $@
+
+out/%.o: %.c
+	$(MKDIR) -p $(dir $@)
+	$(CC) $(CFLAGS_LIB) -MMD -c $< -o $@
+
+out/%.o: %.s
+	$(MKDIR) -p $(dir $@)
+	$(CC) -x assembler-with-cpp -Wa,--register-prefix-optional,--bitwise-or -MMD $(AFLAGS_LIB) -c $< -o $@
+
+out/%.o: %.rs
+	$(MKDIR) -p $(dir $@)
+	$(CC) -x assembler-with-cpp -Wa,--register-prefix-optional,--bitwise-or $(AFLAGS_LIB) -c $*.rs -o $@
+
+%.rs: %.res
+	$(RESCOMP) $*.res $*.rs -dep $*.o
+
+%.o80: %.s80
+	$(ASMZ80) $(FLAGSZ80_LIB) $< $@ out.lst
+
+%.s: %.o80
+	$(BINTOS) $<
