@@ -12,18 +12,20 @@ typedef struct PlayerObject {
     MathBox         limit; // World limit
     MathBox         limitScreenScrollMap;
     MathBox         triggerBox; 
+    MathBox         collisionBox; 
     u8              speed;
     u8              scrollSpeed;
     Direction       scrollDir;
 } PlayerObject;
 
-void Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const MathVector position, u16 tileIndex, u16 palette, u16 priority);
+u16  Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority);
 void Player_SetLimitWorld(PlayerObject* player, const MathBox limit);
 void Player_SetLimitScreenScroll(PlayerObject* player, const MathBox limitScrollMap);
 void Player_SetSpeed(PlayerObject* player, u8 speed);
 void Player_SetScrollSpeed(PlayerObject* player, u8 speed);
 
 void Player_SetTriggerBox(PlayerObject* player, const MathBox triggerBox);
+void Player_SetCollisionBox(PlayerObject* player, const MathBox collisionBox);
 MathBox Player_GetTriggerBoxInWorld(PlayerObject* player);
 
 

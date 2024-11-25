@@ -14,3 +14,11 @@ MathVector Math_ClampByBox(const MathBox box, MathVector pos) {
 
     return pos;
 }
+
+bool Math_IsInsideBoxToBox(const MathBox box1, const MathBox box2) {
+    bool bIsInside = ((box1.vmin.x < box2.vmin.x || box1.vmin.x < box2.vmax.x) && (box1.vmax.x > box2.vmin.x || box1.vmax.x > box2.vmax.x)) || 
+                     ((box2.vmin.x < box1.vmin.x || box2.vmax.x < box1.vmin.x) && (box2.vmin.x > box1.vmax.x || box2.vmax.x > box1.vmax.x));
+    bIsInside = bIsInside && (((box1.vmin.y < box2.vmin.y || box1.vmin.y < box2.vmax.y) && (box1.vmax.y > box2.vmin.y || box1.vmax.y > box2.vmax.y)) || 
+                              ((box2.vmin.y < box1.vmin.y || box2.vmax.y < box1.vmin.y) && (box2.vmin.y > box1.vmax.y || box2.vmax.y > box1.vmax.y)));
+    return bIsInside;       
+}

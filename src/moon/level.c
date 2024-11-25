@@ -5,13 +5,23 @@ LevelObject GLevel;
 void _Level_Initialize(const MathVector resolution) {
     for(u8 idx=0;idx<MAX_LEVEL_LAYERS;++idx) {
         GLevel.layers[idx].map = NULL;
+        GLevel.layers[idx].bOffsetChanged = false;
     }
     GLevel.resolution = resolution;
     VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
+    GLevel.autoScrollOp = NONE_SCROLL;
 }
 
 void _Level_Update() {
-    // GLevel.layers[0].offset.x = GLevel.layers[1].offset.x / 2;
+    if(GLevel.autoScrollOp == DIV_SCROLL) {
+        u8 otherLayer = GLevel.autoScrollLayer == 0 ? 1 : 0;
+        GLevel.layers[GLevel.autoScrollLayer].offset.x = GLevel.layers[otherLayer].offset.x / GLevel.autoScrollValue;
+    }
+    else if(GLevel.autoScrollOp == MULT_SCROLL) {
+        u8 otherLayer = GLevel.autoScrollLayer == 0 ? 1 : 0;
+        GLevel.layers[GLevel.autoScrollLayer].offset.x = GLevel.layers[otherLayer].offset.x * GLevel.autoScrollValue;
+    }
+
     for(u8 idx=0;idx<MAX_LEVEL_LAYERS;++idx) {
         if(GLevel.layers[idx].map) {
             // KLog_U2("Offset X: ", offset_x, " Y: ", offset_y);
@@ -20,11 +30,21 @@ void _Level_Update() {
     }
 }
 
+void _Level_PostUpdate() {
+    for(u8 idx=0;idx<MAX_LEVEL_LAYERS;++idx) {
+        GLevel.layers[idx].bOffsetChanged = false;
+    }
+}
+
 void _Level_SetOffsetMap(VDPPlane layerId, const MathVector offset) {
     if(layerId >= MAX_LEVEL_LAYERS)
         return;
     
-    GLevel.layers[layerId].offset = Math_ClampByBox(GLevel.layers[layerId].limit, offset);
+    const MathVector newOffset = Math_ClampByBox(GLevel.layers[layerId].limit, offset);
+    if(GLevel.layers[layerId].offset.x != newOffset.x || GLevel.layers[layerId].offset.y != newOffset.y) {
+        GLevel.layers[layerId].bOffsetChanged = true;
+        GLevel.layers[layerId].offset = newOffset;
+    }
 }
 
 MathVector _Level_GetOffsetMap(VDPPlane layerId) {
@@ -36,6 +56,13 @@ MathVector _Level_GetOffsetMap(VDPPlane layerId) {
     }
 
     return GLevel.layers[layerId].offset;
+}
+
+bool _Level_IsOffsetChanged(VDPPlane layerId) {
+    if(layerId >= MAX_LEVEL_LAYERS)
+        return false;
+    
+    return GLevel.layers[layerId].bOffsetChanged;
 }
 
 int Level_LoadMap(VDPPlane layerId, const MapDefinition* mapDef, const TileSet* tileSet, const Palette* palette, u16 paletteIdx, u16 baseTileIdx, u16 priority) {
@@ -106,4 +133,10 @@ MathVector Level_LocalToWorld(VDPPlane layerId, const MathVector local) {
 bool Level_IsVisible(VDPPlane layerId, const MathVector world, const MathVector size) {
     MathVector local = Level_WorldToLocal(layerId, world);
     return local.x + size.x > 0 && local.y + size.y > 0 && local.x < GLevel.resolution.x && local.y < GLevel.resolution.y;
+}
+
+void Level_SetAutoScroll(VDPPlane layerId, u8 autoScrollValue, EAutoScrollOp op) {
+    GLevel.autoScrollLayer = layerId;
+    GLevel.autoScrollOp = op;
+    GLevel.autoScrollValue = autoScrollValue;
 }

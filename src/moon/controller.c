@@ -8,6 +8,7 @@ void _Controller_InitializeControllers() {
     for(u8 idx=0;idx<MAX_CONTROLLERS;++idx) {
         GControllers[idx].controllerId = idx;
         GControllers[idx].player = NULL;
+        GControllers[idx].inputFunc = NULL;
     }
 }
 
@@ -19,9 +20,6 @@ void _Controller_SetPlayer(struct PlayerObject *player, u16 joy) {
 
 void _Controller_SetInput(u16 joy, u16 changed, u16 state) {
     if(joy < MAX_CONTROLLERS) {
-        if(!GControllers[joy].player) 
-            return;
-
         ControllerObject *controller = &GControllers[joy];
         bool bIsMoving = false;
         if(state &  BUTTON_DOWN){
@@ -49,6 +47,10 @@ void _Controller_SetInput(u16 joy, u16 changed, u16 state) {
         if(!bIsMoving) {
             controller->axis.x = controller->axis.y = 0;
         }
+        
+        if(controller->inputFunc){
+            controller->inputFunc(joy, changed, state);
+        }
     }
 }
 
@@ -56,6 +58,12 @@ void _Controller_UpdateInput() {
     for(u8 idx=0;idx<MAX_CONTROLLERS;++idx) {
         if(GControllers[idx].player) {
             _Player_UpdateInput(GControllers[idx].player, &GControllers[idx]);
-        }
+        }        
+    }
+}
+
+void Controller_RegisterInputCallback(u16 joy, CallbackInputFunc inputFunc) {
+    if(joy < MAX_CONTROLLERS) {
+        GControllers[joy].inputFunc = inputFunc;
     }
 }

@@ -24,5 +24,6 @@ typedef enum {
 } Direction;
 
 MathVector Math_ClampByBox(const MathBox box, MathVector pos);
+bool       Math_IsInsideBoxToBox(const MathBox box1, const MathBox box2);
 
 #endif

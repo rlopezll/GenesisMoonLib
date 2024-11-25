@@ -1,6 +1,8 @@
 #include "moon/player.h"
 #include "moon/character.h"
 #include "moon/controller.h"
+#include "moon/collision.h"
+#include "moon/game.h"
 #include "moon/level.h"
 
 #define IDLE 0
@@ -18,9 +20,9 @@
 #define LIMIT_SCREEN_SCROLL_UP 20
 #define LIMIT_SCREEN_SCROLL_DOWN 160
 
-void Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const MathVector position, u16 tileIndex, u16 palette, u16 priority) {
+u16 Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority) {
     if(!player)
-        return;
+        return 0;
 
     player->speed = 1;
     player->scrollSpeed = 1;
@@ -40,8 +42,14 @@ void Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const Sp
     player->triggerBox.vmax.x = spriteDef->w;
     player->triggerBox.vmax.y = spriteDef->h;
 
+    player->collisionBox.vmin.x = 0;
+    player->collisionBox.vmin.y = 0;
+    player->collisionBox.vmax.x = spriteDef->w;
+    player->collisionBox.vmax.y = spriteDef->h;
+
     _Controller_SetPlayer(player, joy);
-    Character_Initialize(&player->character, layerId, spriteDef, position, tileIndex, palette, priority);
+    const u16 numTiles = Character_Initialize(&player->character, layerId, spriteDef, palette, position, paletteId, priority);
+    return numTiles;
 }
 
 void Player_SetLimitWorld(PlayerObject* player, const MathBox limit) {
@@ -82,6 +90,13 @@ void Player_SetTriggerBox(PlayerObject* player, const MathBox triggerBox) {
     player->triggerBox = triggerBox;
 }
 
+void Player_SetCollisionBox(PlayerObject* player, const MathBox collisionBox) {
+    if(!player)
+        return;
+
+    player->collisionBox = collisionBox;
+}
+
 MathBox Player_GetTriggerBoxInWorld(PlayerObject* player) {
     MathBox triggerBox;
     if(player) {
@@ -107,10 +122,10 @@ void _Player_UpdateInput(PlayerObject* player, const struct ControllerObject* co
     if(bIsMoving) {
         Character_SetAnim(&player->character, WALK);
         if(controller->axis.x > 0) {
-            Character_SetHFlip(&player->character, true);
+            Character_SetHFlip(&player->character, false);
         }
         else if(controller->axis.x < 0) {
-            Character_SetHFlip(&player->character, false);
+            Character_SetHFlip(&player->character, true);
         }
 
         MathVector newPos = player->character.pos;
@@ -172,10 +187,17 @@ void _Player_UpdateInput(PlayerObject* player, const struct ControllerObject* co
             }
         }
         // Set position player character
-        if(newPos.x != player->character.pos.x || newPos.y != player->character.pos.y) {
-            KLog_S2("Player X: ", newPos.x, " Y: ", newPos.y);
-            Character_SetPosition(&player->character, newPos);
-        }
+        MathBox collisionBox;
+        collisionBox.vmin.x = player->character.pos.x - player->character.offset.x + player->collisionBox.vmin.x;
+        collisionBox.vmin.y = player->character.pos.y - player->character.offset.y + player->collisionBox.vmin.y;
+        collisionBox.vmax.x = player->character.pos.x - player->character.offset.x + player->collisionBox.vmax.x;
+        collisionBox.vmax.y = player->character.pos.y - player->character.offset.y + player->collisionBox.vmax.y;
+        MathVector dir;
+        dir.x = newPos.x - player->character.pos.x;
+        dir.y = newPos.y - player->character.pos.y;
+        Collision_Check(newPos, collisionBox, dir, &newPos);
+        Character_SetPosition(&player->character, newPos);
+
         // Scroll map
         if(newScrollOffset.x != 0 || newScrollOffset.y != 0) {
             MathVector scrollPos = _Level_GetOffsetMap(player->character.layerId);

@@ -75,10 +75,11 @@ void _Objects_Initialize() {
 }
 
 void _Objects_Update() {
-    if(GNumObjectsTrigger == 0 || (!GCallbackEnterTrigger && !GCallbackExitTrigger))
-        return;
 
-    for(u8 idx=0;idx<MAX_CONTROLLERS;++idx) {
+    // Triggers
+    if(GNumObjectsTrigger != 0 && (GCallbackEnterTrigger || GCallbackExitTrigger))
+    {
+        for(u8 idx=0;idx<MAX_CONTROLLERS;++idx) {
         if(GControllers[idx].player) {
             PlayerObject* player = GControllers[idx].player;
             const MathBox playerTriggerBox = Player_GetTriggerBoxInWorld(player);
@@ -107,6 +108,6 @@ void _Objects_Update() {
                 }
             }
         }
+        }
     }
 }
-

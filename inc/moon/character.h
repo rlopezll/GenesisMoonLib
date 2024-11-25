@@ -18,15 +18,15 @@ typedef struct CharacterObject {
     MathVector     localPos; // left/up position (no offset applied)
     MathVector     size;
     s8             currAnimIdx;
+    u8             lastUpdateFrameID;
     bool           hFlip;
     bool           vFlip;
     bool           bIsVisible;
-    bool           bIsPosUpdated;
 } CharacterObject;
 
 extern CharacterObject* GCharacters[MAX_CHARACTERS_REGISTRED];
 
-void Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const MathVector position, u16 tileIndex, u16 palette, u16 priority);
+u16  Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority);
 void Character_RegisterCharacter(CharacterObject* character);
 void Character_UnregisterCharacter(CharacterObject* character);
 void Character_UnregisterAllCharacters();
@@ -42,7 +42,8 @@ bool Character_IsVisible(CharacterObject* character);
 
 // --- Internal use
 void _Character_InitializeRegisterCharacters();
-void _Character_Update(); // Update All Characters
+void _Character_UpdateAllCharacters(); // Update All Characters
+void _Character_UpdateLocalPositionAndVisibility(CharacterObject* character);
 // --- 
 
 #endif
