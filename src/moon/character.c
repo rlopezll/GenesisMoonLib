@@ -5,10 +5,11 @@
 
 CharacterObject* GCharacters[MAX_CHARACTERS_REGISTRED];
 
-u16 Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority) {
+u16 Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, s16 priority) {
     u16 attr = TILE_ATTR(paletteId,priority,FALSE,FALSE);
     KLog_U1("Sprite Attr: ", attr);
     character->sprite = SPR_addSprite(spriteDef, position.x, position.y, TILE_ATTR(paletteId,priority,FALSE,FALSE));
+    SPR_setDepth(character->sprite, priority);
     // SPR_setVRAMTileIndex(character->sprite, tileIndex);
     if(palette) {
         PAL_setPalette(paletteId, palette->data, DMA);
@@ -24,12 +25,14 @@ u16 Character_Initialize(CharacterObject* character, VDPPlane layerId, const Spr
     character->lastUpdateFrameID = GGameCurrFrameId;
     Character_SetPosition(character, position);
     Character_RegisterCharacter(character);
+
     return spriteDef->maxNumTile;
 }
 
 void Character_RegisterCharacter(CharacterObject* character) {
     for(u16 idx=0;idx<MAX_CHARACTERS_REGISTRED;++idx) {
         if(!GCharacters[idx]) {
+            KLog_U1("Character Register idx: ", idx);
             GCharacters[idx] = character;
             break;
         }
@@ -73,12 +76,17 @@ void Character_SetOffset(CharacterObject* character, const MathVector offset) {
     _Character_UpdateLocalPositionAndVisibility(character); // force update
 }
 
+void Character_SetPriority(CharacterObject* character, s16 priority) {
+    SPR_setDepth(character->sprite, priority);
+}
+
 void Character_SetPosition(CharacterObject* character, MathVector position) {
     if(position.x != character->pos.x || position.y != character->pos.y) {
-        KLog_S3("Character X: ", position.x, " Y: ", position.y, " Frame: ", GGameCurrFrameId);
+        // KLog_S3("Character X: ", position.x, " Y: ", position.y, " Frame: ", GGameCurrFrameId);
         character->pos.x = position.x;
         character->pos.y = position.y;
         _Character_UpdateLocalPositionAndVisibility(character);
+        // KLog_S2("Character Local X: ", character->localPos.x, " Y: ", character->localPos.y);
     }
     else {
         character->lastUpdateFrameID = GGameCurrFrameId;
@@ -128,6 +136,9 @@ void _Character_UpdateAllCharacters() {
         }
 
         if(character->bIsVisible) {
+            // KLog_U1("Character idx: ", idx);
+            if(idx >0) 
+                KLog_S2("Character Local X: ", character->localPos.x, " Y: ", character->localPos.y);
             SPR_setPosition(character->sprite, character->localPos.x, character->localPos.y);
         } 
     }

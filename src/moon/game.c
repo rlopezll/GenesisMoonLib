@@ -29,6 +29,7 @@ void Game_InitializeEx(const GameConfigObject* gameConfig)
     _Level_Initialize(resolution);
 
     VDP_setScreenWidth320(); 
+    VDP_setScreenHeight240();
 
     SPR_initEx(gameConfig->spriteManagerNumTiles);
 

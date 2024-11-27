@@ -7,7 +7,7 @@
 typedef struct {
     u8      typeID;
     u16     uniqueID;
-    Box     box;
+    MathBox box;
 } TMX_Object; 
 
 typedef void (*CallbackTriggerFunc)(u8 controllerIdx, TMX_Object* objectTrigger);

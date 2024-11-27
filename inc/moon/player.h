@@ -18,7 +18,7 @@ typedef struct PlayerObject {
     Direction       scrollDir;
 } PlayerObject;
 
-u16  Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority);
+u16  Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, s16 priority);
 void Player_SetLimitWorld(PlayerObject* player, const MathBox limit);
 void Player_SetLimitScreenScroll(PlayerObject* player, const MathBox limitScrollMap);
 void Player_SetSpeed(PlayerObject* player, u8 speed);

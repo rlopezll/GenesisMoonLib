@@ -116,10 +116,12 @@ function parserObj(obj) {
                 {
                     const width = parseInt(obj.attributes.width);
                     const height = parseInt(obj.attributes.height);
-                    codeFile += ` {${typeID}, ${uniqueID}, {${x}, ${y}, ${width}, ${height}}}`;
+                    const maxX = x + width;
+                    const maxY = y + height;
+                    codeFile += ` {${typeID}, ${uniqueID}, {{${x}, ${y}}, {${maxX}, ${maxY}}}}`;
                     // console.log(`Rectangle: ${uniqueID} typeID: ${typeID} X: ${obj.attributes.x} Y: ${obj.attributes.y} W: ${obj.attributes.width} H: ${obj.attributes.height}`);
                 } else {
-                    codeFile += ` {${typeID}, ${uniqueID}, {${x}, ${y}, 0, 0}}`;
+                    codeFile += ` {${typeID}, ${uniqueID}, {{${x}, ${y}}, {0, 0}}}`;
                     // console.log(`Rectangle: ${uniqueID} typeID: ${typeID} X: ${obj.attributes.x} Y: ${obj.attributes.y}`);
                 }
                 bFirstObject = false;

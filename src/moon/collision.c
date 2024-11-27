@@ -39,15 +39,15 @@ void _Collision_Update() {
     levelBox.vmax.y = levelOffset.y + GLevel.resolution.y;
 
     for(u16 idx=0;idx<GCollisions.numObjectsCollision;++idx) {
-        GameCollisionObject *object = &GCollisions.ObjectsCollision[idx];
+        GameCollisionObject *currCollision = &GCollisions.ObjectsCollision[idx];
         bool bIsInside = false;
-        if(object->object) {
-            bIsInside = ((object->object->box.x < levelBox.vmin.x || object->object->box.x < levelBox.vmax.x) && (object->object->box.w > levelBox.vmin.x || object->object->box.w > levelBox.vmax.x)) || 
-                                ((levelBox.vmin.x < object->object->box.x || levelBox.vmax.x < object->object->box.x) && (levelBox.vmin.x > object->object->box.w || levelBox.vmax.x > object->object->box.w));
-            bIsInside = bIsInside && (((object->object->box.y < levelBox.vmin.y || object->object->box.y < levelBox.vmax.y) && (object->object->box.h > levelBox.vmin.y || object->object->box.h > levelBox.vmax.y)) || 
-                                    ((levelBox.vmin.y < object->object->box.y || levelBox.vmax.y < object->object->box.y) && (levelBox.vmin.y > object->object->box.h || levelBox.vmax.y > object->object->box.h)));
+        if(currCollision->object) {
+            bIsInside = ((currCollision->object->box.vmin.x < levelBox.vmin.x || currCollision->object->box.vmin.x < levelBox.vmax.x) && (currCollision->object->box.vmax.x > levelBox.vmin.x || currCollision->object->box.vmax.x > levelBox.vmax.x)) || 
+                                ((levelBox.vmin.x < currCollision->object->box.vmin.x || levelBox.vmax.x < currCollision->object->box.vmin.x) && (levelBox.vmin.x > currCollision->object->box.vmax.x || levelBox.vmax.x > currCollision->object->box.vmax.x));
+            bIsInside = bIsInside && (((currCollision->object->box.vmin.y < levelBox.vmin.y || currCollision->object->box.vmin.y < levelBox.vmax.y) && (currCollision->object->box.vmax.y > levelBox.vmin.y || currCollision->object->box.vmax.y > levelBox.vmax.y)) || 
+                                    ((levelBox.vmin.y < currCollision->object->box.vmin.y || levelBox.vmax.y < currCollision->object->box.vmin.y) && (levelBox.vmin.y > currCollision->object->box.vmax.y || levelBox.vmax.y > currCollision->object->box.vmax.y)));
         }
-        object->bActive = bIsInside;
+        currCollision->bActive = bIsInside;
     }
 }
 
@@ -81,23 +81,32 @@ void Collision_UnRegisterCollisions() {
 
 bool Collision_Check(const MathVector pos, const MathBox box, const MathVector dir, MathVector *collisionPos) {
     for(u16 idx=0;idx<GCollisions.numObjectsCollision;++idx) {
-        GameCollisionObject *object = &GCollisions.ObjectsCollision[idx];
-        if(object->bActive && object->object) {
-            bool bIsInside = ((object->object->box.x < box.vmin.x || object->object->box.x < box.vmax.x) && (object->object->box.w > box.vmin.x || object->object->box.w > box.vmax.x)) || 
-                             ((box.vmin.x < object->object->box.x || box.vmax.x < object->object->box.x) && (box.vmin.x > object->object->box.w || box.vmax.x > object->object->box.w));
-            bIsInside = bIsInside && (((object->object->box.y < box.vmin.y || object->object->box.y < box.vmax.y) && (object->object->box.h > box.vmin.y || object->object->box.h > box.vmax.y)) || 
-                                      ((box.vmin.y < object->object->box.y || box.vmax.y < object->object->box.y) && (box.vmin.y > object->object->box.h || box.vmax.y > object->object->box.h)));
-            if(bIsInside) {
-                if(dir.x > 0 && collisionPos) {
-                    collisionPos->x = object->object->box.x - box.vmax.x - pos.x;
-                } else if(dir.x < 0 && collisionPos) {
-                    collisionPos->x = object->object->box.x + object->object->box.w;
+        GameCollisionObject *currCollision = &GCollisions.ObjectsCollision[idx];
+        if(currCollision->bActive && currCollision->object) {
+            const bool bIsInsideX = ((currCollision->object->box.vmin.x < box.vmin.x || currCollision->object->box.vmin.x < box.vmax.x) && (currCollision->object->box.vmax.x > box.vmin.x || currCollision->object->box.vmax.x > box.vmax.x)) || 
+                             ((box.vmin.x < currCollision->object->box.vmin.x || box.vmax.x < currCollision->object->box.vmin.x) && (box.vmin.x > currCollision->object->box.vmax.x || box.vmax.x > currCollision->object->box.vmax.x));
+            const bool bIsInsideY = (((currCollision->object->box.vmin.y < box.vmin.y || currCollision->object->box.vmin.y < box.vmax.y) && (currCollision->object->box.vmax.y > box.vmin.y || currCollision->object->box.vmax.y > box.vmax.y)) || 
+                                      ((box.vmin.y < currCollision->object->box.vmin.y || box.vmax.y < currCollision->object->box.vmin.y) && (box.vmin.y > currCollision->object->box.vmax.y || box.vmax.y > currCollision->object->box.vmax.y)));
+            if(bIsInsideX && bIsInsideY) {
+                // KLog_U1("Is Inside idx: ", idx);
+                // KLog_S2("Collision X: ", pos.x, " Y: ", pos.y);
+                // KLog_S4("Collision Player Box MinX: ", box.vmin.x, " MinY: ", box.vmin.y, " MaxX: ", box.vmax.x, " MaxY: ", box.vmax.y);
+                // KLog_S4("Collision Object Box X: ", currCollision->object->box.vmin.x, " Y: ", currCollision->object->box.vmin.y, " W: ", currCollision->object->box.vmax.x, " H: ", currCollision->object->box.vmax.y);
+                if(bIsInsideX && dir.x > 0 && collisionPos) {
+                    // KLog("Collision 1");
+                    collisionPos->x = pos.x - (box.vmax.x - currCollision->object->box.vmin.x);
+                } else if(bIsInsideX && dir.x < 0 && collisionPos) {
+                    // KLog("Collision 2");
+                    collisionPos->x = pos.x + (currCollision->object->box.vmax.x - box.vmin.x);
                 }
-                if(dir.y > 0 && collisionPos) {
-                    collisionPos->y = object->object->box.y - box.vmax.y - pos.y;
-                } else if(dir.y < 0 && collisionPos) {
-                    collisionPos->y = object->object->box.y + object->object->box.h;
+                if(bIsInsideY && dir.y > 0 && collisionPos) {
+                    // KLog("Collision 3");
+                    collisionPos->y = pos.y - (box.vmax.y - currCollision->object->box.vmin.y);
+                } else if(bIsInsideY && dir.y < 0 && collisionPos) {
+                    // KLog("Collision 4");
+                    collisionPos->y = pos.y + (currCollision->object->box.vmax.y - box.vmin.y);
                 }
+                // KLog_S2("New Position X: ", collisionPos->x, " Y: ", collisionPos->y);
                 return true;
             }
         }

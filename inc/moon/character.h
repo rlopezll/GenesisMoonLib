@@ -26,12 +26,13 @@ typedef struct CharacterObject {
 
 extern CharacterObject* GCharacters[MAX_CHARACTERS_REGISTRED];
 
-u16  Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority);
+u16  Character_Initialize(CharacterObject* character, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, s16 priority);
 void Character_RegisterCharacter(CharacterObject* character);
 void Character_UnregisterCharacter(CharacterObject* character);
 void Character_UnregisterAllCharacters();
 
 void Character_SetOffset(CharacterObject* character, const MathVector offset);
+void Character_SetPriority(CharacterObject* character, s16 priority);
 void Character_SetPosition(CharacterObject* character, MathVector position);
 
 void Character_SetAnim(CharacterObject* character, u8 animIdx);

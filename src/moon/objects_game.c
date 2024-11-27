@@ -85,12 +85,7 @@ void _Objects_Update() {
             const MathBox playerTriggerBox = Player_GetTriggerBoxInWorld(player);
             for(u16 idx2=0;idx2<GNumObjectsTrigger;++idx2) {
                 if(GObjectsTrigger[idx2].object) {
-                    const Box box = GObjectsTrigger[idx2].object->box;
-                    MathBox triggerBox;
-                    triggerBox.vmin.x = box.x;
-                    triggerBox.vmin.y = box.y;
-                    triggerBox.vmax.x = box.x + box.w;
-                    triggerBox.vmax.y = box.y + box.h;
+                    const MathBox triggerBox = GObjectsTrigger[idx2].object->box;
                     bool bIsInside = ((triggerBox.vmin.x < playerTriggerBox.vmin.x || triggerBox.vmin.x < playerTriggerBox.vmax.x) && (triggerBox.vmax.x > playerTriggerBox.vmin.x || triggerBox.vmax.x > playerTriggerBox.vmax.x)) || 
                        ((playerTriggerBox.vmin.x < triggerBox.vmin.x || playerTriggerBox.vmax.x < triggerBox.vmin.x) && (playerTriggerBox.vmin.x > triggerBox.vmax.x || playerTriggerBox.vmax.x > triggerBox.vmax.x));
                     bIsInside = bIsInside && (((triggerBox.vmin.y < playerTriggerBox.vmin.y || triggerBox.vmin.y < playerTriggerBox.vmax.y) && (triggerBox.vmax.y > playerTriggerBox.vmin.y || triggerBox.vmax.y > playerTriggerBox.vmax.y)) || 

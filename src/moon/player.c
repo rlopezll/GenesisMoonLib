@@ -20,7 +20,7 @@
 #define LIMIT_SCREEN_SCROLL_UP 20
 #define LIMIT_SCREEN_SCROLL_DOWN 160
 
-u16 Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, u16 priority) {
+u16 Player_Initialize(PlayerObject* player, u16 joy, VDPPlane layerId, const SpriteDefinition* spriteDef, const Palette* palette, const MathVector position, u16 paletteId, s16 priority) {
     if(!player)
         return 0;
 
@@ -188,14 +188,16 @@ void _Player_UpdateInput(PlayerObject* player, const struct ControllerObject* co
         }
         // Set position player character
         MathBox collisionBox;
-        collisionBox.vmin.x = player->character.pos.x - player->character.offset.x + player->collisionBox.vmin.x;
-        collisionBox.vmin.y = player->character.pos.y - player->character.offset.y + player->collisionBox.vmin.y;
-        collisionBox.vmax.x = player->character.pos.x - player->character.offset.x + player->collisionBox.vmax.x;
-        collisionBox.vmax.y = player->character.pos.y - player->character.offset.y + player->collisionBox.vmax.y;
+        collisionBox.vmin.x = newPos.x - player->character.offset.x + player->collisionBox.vmin.x;
+        collisionBox.vmin.y = newPos.y - player->character.offset.y + player->collisionBox.vmin.y;
+        collisionBox.vmax.x = newPos.x - player->character.offset.x + player->collisionBox.vmax.x;
+        collisionBox.vmax.y = newPos.y - player->character.offset.y + player->collisionBox.vmax.y;
         MathVector dir;
         dir.x = newPos.x - player->character.pos.x;
         dir.y = newPos.y - player->character.pos.y;
-        Collision_Check(newPos, collisionBox, dir, &newPos);
+        // MathVector outNewPos;
+        if(Collision_Check(newPos, collisionBox, dir, &newPos))
+            return;
         Character_SetPosition(&player->character, newPos);
 
         // Scroll map
