@@ -5,13 +5,15 @@ const path = require('node:path');
 let filename = '';
 let filename_out_h = '';
 let filename_out_c = '';
-if(process.argv.length > 4) {
+let prefix = '';
+if(process.argv.length > 5) {
     filename = process.argv[2];
     filename_out_h = process.argv[3];
     filename_out_c = process.argv[4];
+    prefix = process.argv[5];
 }
 else {
-    console.log(`node import_tmx.js <filename_tmx> <filename_output_header> <filename_output_c>`);
+    console.log(`node import_tmx.js <filename_tmx> <filename_output_header> <filename_output_c> <varname_prefix>`);
     process.exit(1);
 }
 
@@ -50,8 +52,8 @@ parserEnumTypesObj(jObj2);
 
 const enumTypes = [ ...new Set(enumTypesArray)]  
 
-let headerFile = `#ifndef _TMX_OBJECTS_
-#define _TMX_OBJECTS_
+let headerFile = `#ifndef _TMX_${prefix}_OBJECTS_
+#define _TMX_${prefix}_OBJECTS_
 
 #include <genesis.h>
 #include "moon/objects_game.h"
@@ -65,19 +67,19 @@ enumTypes.forEach(element => {
     headerFile += `\t` + element.toUpperCase();
     bFirstEnum = false;
 });
-headerFile += `\n} EObjectType;\n\n`;
+headerFile += `\n} E${prefix}ObjectType;\n\n`;
 
 headerFile += `
-#define NUM_GTMX_OBJECTS ${tmx_objects_count}
+#define NUM_GTMX_${prefix}_OBJECTS ${tmx_objects_count}
 
-extern TMX_Object GTMX_Objects[NUM_GTMX_OBJECTS];
+extern TMX_Object GTMX_${prefix}Objects[NUM_GTMX_${prefix}_OBJECTS];
 
 #endif
 `;
 
 let codeFile = `#include "${only_filename_out_header}"
 
-TMX_Object GTMX_Objects[NUM_GTMX_OBJECTS] = {
+TMX_Object GTMX_${prefix}Objects[NUM_GTMX_${prefix}_OBJECTS] = {
 `;
 
 let bFirstObject = true;
